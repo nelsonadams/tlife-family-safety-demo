@@ -141,7 +141,7 @@ const hexes = D.cells.map(([lat, lng], c) => {
   p.bindTooltip(() => tipFor(c), { sticky: true, className: 'hex-tip', direction: 'top', offset: [0, -6] });
   return p;
 });
-const selRing = L.polygon([[0, 0]], { color: '#fff', weight: 3, fill: false, interactive: false, dashArray: '5 4' });
+const selRing = L.polygon([[0, 0]], { renderer, color: '#fff', weight: 3, fill: false, interactive: false, dashArray: '5 4' });
 const STATION_ICON = L.divIcon({ className: '', iconSize: [16, 16], html: '<div class="stn">⬢</div>' });
 for (const [n, la, lo] of D.stations) L.marker([la, lo], { icon: STATION_ICON, keyboard: false, interactive: true }).bindTooltip(n, { className: 'hex-tip', direction: 'top' }).addTo(map);
 const rankLayer = L.layerGroup().addTo(map);
