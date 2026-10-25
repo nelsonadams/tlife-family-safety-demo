@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>T-Life Family Safety · Executive Demo</title>
+<title>T-Insights · Lime Partner Portal</title>
 <link rel="stylesheet" href="vendor/leaflet.css" />
 <link rel="stylesheet" href="styles.css" />
 </head>
@@ -12,194 +12,103 @@
   <div class="brand">
     <div class="brand-mark">T</div>
     <div class="brand-text">
-      <div class="brand-title">T-Life <span>Family Safety</span></div>
-      <div class="brand-sub">Child location, geofence &amp; speed alerts · Executive concept demo</div>
+      <div class="brand-title"><b>T-<span>Insights</span></b> <span class="x">×</span><em class="partner"><i class="lime-dot"></i>Lime</em></div>
+      <div class="brand-sub">B2B partner portal · Micromobility staging intelligence · Bellevue, WA</div>
     </div>
   </div>
   <div class="topbar-right">
-    <div class="sim-clock"><span class="dot"></span><span id="topClock">7:44 AM</span><small>simulated time</small></div>
-    <button class="icon-btn" id="soundBtn" title="Toggle notification sound">Sound on</button>
-    <button class="icon-btn" id="fsBtn" title="Fullscreen (F)">Fullscreen</button>
+    <div class="plan-pill" title="Simulated commercial plan"><b>Mobility Demand Pro</b><small>Bellevue metro · hourly refresh</small></div>
+    <button class="icon-btn" id="exportBtn" title="Download the daily staging plan as CSV">Export plan (CSV)</button>
+    <button class="icon-btn" id="apiBtn" title="Show the API call behind this view">API</button>
   </div>
 </header>
 
 <main class="stage">
-  <!-- Presenter console -->
+  <!-- Filters -->
   <aside class="panel console">
-    <div class="panel-head">
-      <h2>Demo scenarios</h2>
-      <button class="link-btn" id="tourBtn">Run full story</button>
-    </div>
-    <div id="scenarioList" class="scenario-list"></div>
+    <div class="panel-head"><h2>View</h2><span class="tag" id="freshTag">Anonymized · aggregated</span></div>
 
-    <div class="controls">
-      <button class="play-btn" id="playBtn"><span class="play-ico"></span><span id="playLabel">Play</span></button>
-      <button class="ctrl-btn" id="resetBtn" title="Restart scenario (R)">Restart</button>
-      <div class="seg" id="speedSeg">
-        <button data-mult="30">30×</button><button data-mult="60">60×</button><button data-mult="120">120×</button>
-      </div>
-    </div>
-    <div class="progress"><div class="progress-bar" id="progressBar"></div></div>
-    <div class="progress-meta"><span id="progressLeft">—</span><span id="progressRight">—</span></div>
+    <h3>Day</h3>
+    <div class="seg" id="daySeg"><button data-v="wd">Weekday</button><button data-v="we">Weekend</button></div>
 
-    <div class="tips">
-      <h3>Try it live</h3>
-      <ul>
-        <li>Once Jake is on I-90 in scenario 3, open <b>Alerts</b> on the phone and drag the speed limit below his speed. The alert fires right away.</li>
-        <li>Shrink the <b>School</b> radius in <b>Places</b> and Emma leaves the zone sooner.</li>
-        <li>Keys: <kbd>Space</kbd> play/pause · <kbd>1</kbd>–<kbd>3</kbd> scenarios · <kbd>R</kbd> restart · <kbd>F</kbd> fullscreen</li>
-      </ul>
-    </div>
+    <h3>Fleet</h3>
+    <div class="seg" id="fleetSeg"><button data-v="scooter">Scooters</button><button data-v="bike">E-bikes</button><button data-v="both">Both</button></div>
 
-    <div class="value">
-      <h3>Why it matters for T-Mobile</h3>
-      <div class="value-grid">
-        <div><b>Daily engagement</b><span>Gives families a reason to open T-Life every day</span></div>
-        <div><b>Line &amp; device attach</b><span>Pulls through kids' lines, SyncUP KIDS Watch, and teen phones</span></div>
-        <div><b>Premium tier</b><span>Room for a paid "Family Safety+" add-on</span></div>
-        <div><b>Network-native</b><span>Built on T-Mobile 5G and LTE devices, so a smartphone isn't required</span></div>
-      </div>
-    </div>
+    <h3>Map layer</h3>
+    <div class="seg" id="layerSeg"><button data-v="score">Propensity</button><button data-v="foot">Foot traffic</button><button data-v="net">Net flow</button></div>
+    <div class="legend" id="legend"></div>
+
+    <h3>Rider segment</h3>
+    <label class="check"><input type="checkbox" checked disabled /> Adults 18+ <small id="segA"></small></label>
+    <label class="check"><input type="checkbox" id="teenChk" /> Teens 16–17 <small id="segT"></small></label>
+    <div class="note">Teen data is shared only with parental consent. It's off by default because Lime accounts require riders to be 18+ in most markets.</div>
+
+    <h3>Privacy guardrails</h3>
+    <div class="slider-row"><label for="kSlider">Min. devices per cell (k)</label><b id="kVal">10</b></div>
+    <input type="range" id="kSlider" min="5" max="40" step="1" value="10" />
+    <div class="slider-row"><label for="epsSlider">Noise budget ε <small>(lower is more private)</small></label><b id="epsVal">1.0</b></div>
+    <input type="range" id="epsSlider" min="0.2" max="4" step="0.1" value="1" />
+    <div class="priv-stats" id="privStats"></div>
+    <ul class="priv-list">
+      <li><b>No individual data leaves T-Mobile.</b> Partners get only hourly counts per ~0.15 km² hex cell.</li>
+      <li><b>Under-16 devices excluded</b>, including all kids' watches (COPPA).</li>
+      <li><b>Opt-in only:</b> members who decline "Share anonymized insights" are never counted.</li>
+    </ul>
+
+    <details class="model">
+      <summary>Propensity model weights</summary>
+      <div class="slider-row"><label for="wDemand">Addressable short trips</label><b id="wDemandVal"></b></div>
+      <input type="range" id="wDemand" min="0" max="1" step="0.05" value="0.5" />
+      <div class="slider-row"><label for="wFoot">Foot traffic</label><b id="wFootVal"></b></div>
+      <input type="range" id="wFoot" min="0" max="1" step="0.05" value="0.2" />
+      <div class="slider-row"><label for="wTransit">Transit first/last mile</label><b id="wTransitVal"></b></div>
+      <input type="range" id="wTransit" min="0" max="1" step="0.05" value="0.15" />
+      <div class="slider-row"><label for="wNet">Net outflow (vehicles needed)</label><b id="wNetVal"></b></div>
+      <input type="range" id="wNet" min="0" max="1" step="0.05" value="0.15" />
+    </details>
   </aside>
 
-  <!-- Phone -->
-  <section class="device-wrap" id="deviceWrap">
-    <div class="phone-scaler" id="phoneScaler">
-      <div class="phone" id="phone">
-        <div class="phone-btn b1"></div><div class="phone-btn b2"></div><div class="phone-btn b3"></div>
-        <div class="phone-screen">
-          <div class="statusbar">
-            <span class="sb-time" id="sbTime">7:44</span>
-            <div class="island"></div>
-            <span class="sb-right"><span class="sb-carrier">5G</span>
-              <svg width="18" height="12" viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5" width="3" height="7" rx="1"/><rect x="10" y="2.5" width="3" height="9.5" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
-              <svg width="26" height="12" viewBox="0 0 26 12"><rect x="0.5" y="0.5" width="22" height="11" rx="3" fill="none" stroke="currentColor" opacity=".45"/><rect x="2" y="2" width="16" height="8" rx="1.8"/><rect x="23.5" y="4" width="2" height="4" rx="1" opacity=".45"/></svg>
-            </span>
-          </div>
-          <div class="notif-stack" id="notifStack"></div>
-
-          <div class="app">
-            <div class="app-header">
-              <div class="app-title-row">
-                <div>
-                  <div class="app-kicker"><span class="tl-badge">T</span> T-Life</div>
-                  <div class="app-title" id="appTitle">Family</div>
-                </div>
-                <div class="parent-av" title="Signed in as Parent">M</div>
-              </div>
-              <div class="member-chips" id="memberChips"></div>
-            </div>
-
-            <div class="screens">
-              <section class="screen active" data-screen="map">
-                <div id="map"></div>
-                <div class="live-pill"><span></span>LIVE</div>
-                <button class="recenter" id="recenterBtn" title="Recenter">
-                  <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 8a4 4 0 100 8 4 4 0 000-8zm8.94 3A8.99 8.99 0 0013 3.06V1h-2v2.06A8.99 8.99 0 003.06 11H1v2h2.06A8.99 8.99 0 0011 20.94V23h2v-2.06A8.99 8.99 0 0020.94 13H23v-2h-2.06zM12 19a7 7 0 110-14 7 7 0 010 14z"/></svg>
-                </button>
-                <div class="sheet" id="sheet"></div>
-              </section>
-
-              <section class="screen scroll" data-screen="places">
-                <div class="screen-intro">Get notified when your family arrives at or leaves a place.</div>
-                <div id="placesList"></div>
-                <button class="ghost-btn" id="addPlaceBtn">+ Add a place</button>
-              </section>
-
-              <section class="screen scroll" data-screen="alerts">
-                <div class="screen-intro">Alerts apply to <b>Emma</b> and <b>Jake</b>. Changes take effect right away.</div>
-
-                <div class="card">
-                  <div class="card-row">
-                    <div class="card-ico ico-red"><svg viewBox="0 0 24 24"><path d="M12 4a10 10 0 00-8.66 15h17.32A10 10 0 0012 4zm0 2a8 8 0 016.92 12H5.08A8 8 0 0112 6zm4.2 2.4l-5.1 5.1a1.5 1.5 0 102.1 2.1l3-7.2z"/></svg></div>
-                    <div class="card-main"><div class="card-title">Speed alerts</div><div class="card-sub">Notify me when someone goes faster than this</div></div>
-                    <label class="switch"><input type="checkbox" id="speedOn" checked><span></span></label>
-                  </div>
-                  <div class="slider-row">
-                    <input type="range" id="speedLimit" min="20" max="90" step="5" value="65">
-                    <div class="slider-val"><b id="speedLimitVal">65</b> mph</div>
-                  </div>
-                </div>
-
-                <div class="card">
-                  <div class="card-row">
-                    <div class="card-ico ico-amber"><svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 00-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 00-7-7zm0 9.5A2.5 2.5 0 1112 6.5a2.5 2.5 0 010 5z"/></svg></div>
-                    <div class="card-main"><div class="card-title">Distance alerts</div><div class="card-sub">Notify me when someone gets farther than this from</div></div>
-                    <label class="switch"><input type="checkbox" id="distOn" checked><span></span></label>
-                  </div>
-                  <div class="seg seg-light" id="anchorSeg"><button data-anchor="home" class="on">Home</button><button data-anchor="school">School</button></div>
-                  <div class="slider-row">
-                    <input type="range" id="distMax" min="0.25" max="5" step="0.25" value="1">
-                    <div class="slider-val"><b id="distMaxVal">1.0</b> mi</div>
-                  </div>
-                </div>
-
-                <div class="card">
-                  <div class="card-row">
-                    <div class="card-ico ico-mag"><svg viewBox="0 0 24 24"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zm-7 9.18v4L12 20l7-3.82v-4L12 16l-7-3.82z"/></svg></div>
-                    <div class="card-main"><div class="card-title">School-hours watch</div><div class="card-sub">Urgent alert if someone leaves school between 8:00 AM and 3:00 PM</div></div>
-                    <label class="switch"><input type="checkbox" id="schoolOn" checked><span></span></label>
-                  </div>
-                </div>
-
-                <div class="card">
-                  <div class="card-row">
-                    <div class="card-ico ico-teal"><svg viewBox="0 0 24 24"><path d="M10 20h4a2 2 0 01-4 0zm8-6V10a6 6 0 00-5-5.91V3a1 1 0 00-2 0v1.09A6 6 0 006 10v4l-2 2v1h16v-1l-2-2z"/></svg></div>
-                    <div class="card-main"><div class="card-title">Also notify</div><div class="card-sub">Dad (iPhone) · Grandma (Apple Watch)</div></div>
-                    <label class="switch"><input type="checkbox" checked><span></span></label>
-                  </div>
-                </div>
-              </section>
-
-              <section class="screen scroll" data-screen="activity">
-                <div class="screen-intro">Everything that happened today, newest first.</div>
-                <div id="activityList"><div class="empty">No activity yet. Press <b>Play</b> to start a scenario.</div></div>
-              </section>
-            </div>
-
-            <nav class="tabbar">
-              <button data-tab="map" class="on"><svg viewBox="0 0 24 24"><path d="M15 5.1L9 3 3 5v16l6-2.1 6 2.1 6-2V3l-6 2.1zM15 19l-6-2.1V5l6 2.1V19z"/></svg>Map</button>
-              <button data-tab="places"><svg viewBox="0 0 24 24"><path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z"/></svg>Places</button>
-              <button data-tab="alerts"><svg viewBox="0 0 24 24"><path d="M12 22a2 2 0 002-2h-4a2 2 0 002 2zm6-6v-5a6 6 0 00-5-5.91V4a1 1 0 00-2 0v1.09A6 6 0 006 11v5l-2 2v1h16v-1l-2-2z"/></svg>Alerts</button>
-              <button data-tab="activity"><svg viewBox="0 0 24 24"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h10v2H4z"/></svg>Activity<span class="badge" id="actBadge"></span></button>
-            </nav>
-          </div>
-          <div class="home-ind"></div>
-        </div>
+  <!-- Map -->
+  <section class="map-wrap">
+    <div id="map"></div>
+    <div class="map-kpis" id="mapKpis"></div>
+    <div class="timebar">
+      <button class="play-btn" id="playBtn" title="Play the day (Space)"><span class="play-ico"></span></button>
+      <div class="time-main">
+        <div class="time-head"><b id="hourLabel">8 AM</b><span id="hourSub">Morning commute</span></div>
+        <div class="spark" id="spark"></div>
+        <input type="range" id="hourSlider" min="0" max="23" step="1" value="8" />
+        <div class="ticks"><span>12a</span><span>3a</span><span>6a</span><span>9a</span><span>12p</span><span>3p</span><span>6p</span><span>9p</span><span>11p</span></div>
       </div>
     </div>
-    <div class="device-caption">Parent's phone · <b>T-Life app</b></div>
   </section>
 
-  <!-- Under the hood -->
-  <aside class="panel hood">
-    <div class="panel-head"><h2>Under the hood</h2><span class="tag">real-time</span></div>
-
-    <div class="pipeline" id="pipeline">
-      <div class="pn"><div class="pn-ico"><svg viewBox="0 0 24 24"><path d="M9 2h6l1 3.1A7 7 0 0119 11v2a7 7 0 01-3 5.9L15 22H9l-1-3.1A7 7 0 015 13v-2a7 7 0 013-5.9L9 2zm3 5a5 5 0 100 10 5 5 0 000-10zm-.75 2h1.5v3.2l2 1.2-.75 1.3-2.75-1.6V9z"/></svg></div><span>Child device<br><small>GPS + LTE/5G</small></span></div>
-      <div class="pl"></div>
-      <div class="pn"><div class="pn-ico"><svg viewBox="0 0 24 24"><path d="M2 20h3v-4H2v4zm5 0h3v-8H7v8zm5 0h3V8h-3v12zm5-16v16h3V4h-3z"/></svg></div><span>T-Mobile<br><small>network</small></span></div>
-      <div class="pl"></div>
-      <div class="pn"><div class="pn-ico"><svg viewBox="0 0 24 24"><path d="M19.4 13a7.5 7.5 0 000-2l2.1-1.6-2-3.5-2.5 1a7.6 7.6 0 00-1.7-1L15 3h-4l-.4 2.9a7.6 7.6 0 00-1.7 1l-2.5-1-2 3.5L6.6 11a7.5 7.5 0 000 2l-2.1 1.6 2 3.5 2.5-1a7.6 7.6 0 001.7 1L11 21h4l.4-2.9a7.6 7.6 0 001.7-1l2.5 1 2-3.5-2.2-1.6zM13 15.5a3.5 3.5 0 110-7 3.5 3.5 0 010 7z" transform="translate(-1 0)"/></svg></div><span>T-Life<br><small>rules engine</small></span></div>
-      <div class="pl"></div>
-      <div class="pn"><div class="pn-ico"><svg viewBox="0 0 24 24"><path d="M16 1H8a3 3 0 00-3 3v16a3 3 0 003 3h8a3 3 0 003-3V4a3 3 0 00-3-3zm-4 21a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm5-5H7V4h10v13z"/></svg></div><span>Parent<br><small>push alert</small></span></div>
+  <!-- Recommendations -->
+  <aside class="panel insights">
+    <div class="tabs" id="tabs">
+      <button data-t="now" class="on">Stage now</button><button data-t="plan">Daily plan</button><button data-t="zone">Zone detail</button>
     </div>
-
-    <h3>Live telemetry</h3>
-    <div class="telemetry" id="telemetry"></div>
-
-    <h3>Rules being checked</h3>
-    <div class="rules" id="rules"></div>
-
-    <h3>Event stream</h3>
-    <div class="log" id="log"></div>
+    <div class="tab-body" id="tab-now"></div>
+    <div class="tab-body hidden" id="tab-plan"></div>
+    <div class="tab-body hidden" id="tab-zone"><div class="empty">Click a hex on the map to see when demand peaks there.</div></div>
   </aside>
 </main>
 
-<footer class="foot">Concept prototype for an internal demo. All people, devices, and trips are simulated. Map tiles © Esri; map data © OpenStreetMap contributors and Esri partners. Routes follow real Bellevue, WA roads.</footer>
+<footer class="foot">
+  <span>Concept prototype. The panel, trips, and scores are simulated from a synthetic T-Life population, and coordinates are approximate.</span>
+  <span>Keys: <kbd>Space</kbd> play · <kbd>←</kbd>/<kbd>→</kbd> hour · <kbd>W</kbd> weekday/weekend</span>
+</footer>
+
+<div class="modal hidden" id="apiModal">
+  <div class="modal-card">
+    <div class="panel-head"><h2>Partner API</h2><button class="icon-btn" id="apiClose">Close</button></div>
+    <p class="muted">The same scores are available hourly over REST. Responses carry only k-anonymous, noised aggregates.</p>
+    <pre id="apiCode"></pre>
+  </div>
+</div>
 
 <script src="vendor/leaflet.js"></script>
-<script src="data/routes.js"></script>
+<script src="data/insights.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
