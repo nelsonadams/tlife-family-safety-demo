@@ -1,4 +1,4 @@
-"""Inline CSS/JS (incl. Leaflet) into dist/tlife-family-safety-demo.html so the demo is one shareable file.
+"""Inline CSS/JS (incl. Leaflet) into dist/tfamily-lime-portal.html so the demo is one shareable file.
 Map tiles still load from the internet."""
 import os, re
 root = os.path.join(os.path.dirname(__file__), "..")
@@ -10,6 +10,6 @@ def inline_js(m):
     return "<script>\n" + js + "\n</script>"
 html = re.sub(r'<script src="([^"]+)"></script>', inline_js, html)
 os.makedirs(os.path.join(root, "dist"), exist_ok=True)
-out = os.path.join(root, "dist", "tlife-family-safety-demo.html")
+out = os.path.join(root, "dist", "tfamily-lime-portal.html")
 open(out, "w", encoding="utf-8").write(html)
 print(out, len(html) // 1024, "KB")
